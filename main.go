@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/mhasnanr/e-wallet/bootstrap"
-	"github.com/mhasnanr/e-wallet/cmd"
+	"github.com/mhasnanr/ewallet-ums/bootstrap"
+	"github.com/mhasnanr/ewallet-ums/cmd"
 )
 
 func main() {
@@ -19,5 +19,5 @@ func main() {
 	bootstrap.SetupDatabase()
 
 	go cmd.ServeGRPC()
-	cmd.ServeHTTP()
+	cmd.ServeHTTP(bootstrap.DB)
 }
