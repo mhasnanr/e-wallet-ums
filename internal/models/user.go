@@ -28,11 +28,27 @@ func (m *User) Validate() error {
 	return v.Struct(m)
 }
 
+type LoginRequest struct {
+	Email    string `json:"email" validate:"required"`
+	Password string `json:"password" validate:"required"`
+}
+
+type LoginResponse struct {
+	UserID       int    `json:"user_id"`
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+func (m *LoginRequest) Validate() error {
+	v := validator.New()
+	return v.Struct(m)
+}
+
 type UserSession struct {
 	ID                  uint      `gorm:"primaryKey"`
 	UserID              uint      `json:"user_id" gorm:"type:int" validate:"required"`
-	Token               string    `json:"token" gorm:"type:varchar(255)" validate:"required"`
-	RefreshToken        string    `json:"refresh_token" gorm:"type:varchar(255)" validate:"required"`
+	Token               string    `json:"token" gorm:"type:text" validate:"required"`
+	RefreshToken        string    `json:"refresh_token" gorm:"type:text" validate:"required"`
 	TokenExpired        time.Time `json:"-" validate:"required"`
 	RefreshTokenExpired time.Time `json:"-" validate:"required"`
 	CreatedAt           time.Time
