@@ -2,8 +2,9 @@ package repository
 
 import (
 	"context"
-	"fmt"
+	"time"
 
+	"github.com/mhasnanr/ewallet-ums/helpers"
 	"github.com/mhasnanr/ewallet-ums/internal/models"
 	"gorm.io/gorm"
 )
@@ -54,13 +55,15 @@ func (r *UserRepository) GetUserSessionByRefreshToken(ctx context.Context, refre
 
 func (r *UserRepository) UpdateTokenByRefreshToken(ctx context.Context, token string, refreshToken string) error {
 	var userSession models.UserSession
-	fmt.Println(refreshToken)
 	err := r.DB.Where("refresh_token = ?", refreshToken).First(&userSession).Error
 	if err != nil {
 		return err
 	}
 
-	err = r.DB.Model(&userSession).Update("token", token).Error
+	err = r.DB.Model(&userSession).Update("token", token).Updates(map[string]interface{}{
+		"token":         token,
+		"token_expired": time.Now().Add(helpers.MapTypeToken["token"]),
+	}).Error
 	if err != nil {
 		return err
 	}
