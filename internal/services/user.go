@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/mhasnanr/ewallet-ums/constants"
@@ -15,12 +14,15 @@ type JWTManager interface {
 	HashPassword(password string) (string, error)
 	VerifyPassword(hashed string, plain string) error
 	GenerateToken(user models.User, tokenType string) (string, error)
+	ValidateToken(ctx context.Context, token string) (*helpers.ClaimToken, error)
 }
 
 type UserRepository interface {
 	Register(context.Context, models.User) error
 	GetUserByEmail(context.Context, string) (models.User, error)
 	CreateUserSession(context.Context, models.UserSession) error
+	GetUserSessionByRefreshToken(context.Context, string) error
+	UpdateTokenByRefreshToken(context.Context, string, string) error
 }
 
 type UserService struct {
@@ -63,8 +65,6 @@ func (s *UserService) Login(ctx context.Context, req models.LoginRequest) (model
 		return response, errors.New(constants.ErrUserNotFound)
 	}
 
-	fmt.Println(returnedUser)
-
 	if err != nil {
 		return response, err
 	}
@@ -104,4 +104,25 @@ func (s *UserService) Login(ctx context.Context, req models.LoginRequest) (model
 	response.RefreshToken = refreshToken
 
 	return response, nil
+}
+
+func (s *UserService) UpdateTokenByRefreshToken(ctx context.Context, refreshToken string, claims helpers.ClaimToken) (string, error) {
+	var user models.User
+
+	user.ID = claims.UserID
+	user.Username = claims.Username
+	user.Email = claims.Email
+	user.FullName = claims.Fullname
+
+	newToken, err := s.jwtManager.GenerateToken(user, "token")
+	if err != nil {
+		return newToken, errors.New("failed to generate token")
+	}
+
+	err = s.repo.UpdateTokenByRefreshToken(ctx, newToken, refreshToken)
+	if err != nil {
+		return newToken, errors.New("failed to update token")
+	}
+
+	return newToken, nil
 }

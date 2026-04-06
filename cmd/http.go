@@ -8,6 +8,7 @@ import (
 	"github.com/mhasnanr/ewallet-ums/bootstrap"
 	"github.com/mhasnanr/ewallet-ums/helpers"
 	"github.com/mhasnanr/ewallet-ums/internal/handler"
+	"github.com/mhasnanr/ewallet-ums/internal/middleware"
 	"github.com/mhasnanr/ewallet-ums/internal/repository"
 	"github.com/mhasnanr/ewallet-ums/internal/services"
 	"gorm.io/gorm"
@@ -22,8 +23,9 @@ func ServeHTTP(db *gorm.DB) {
 
 	jwtApp := &helpers.JWTApp{}
 	userRepository := repository.NewUserRepository(db)
+	authMiddleware := middleware.NewAuthMiddleware(userRepository, jwtApp)
 	userService := services.NewUserService(userRepository, jwtApp)
-	userHandler := handler.NewUserHandler(userService)
+	userHandler := handler.NewUserHandler(userService, authMiddleware)
 
 	userHandler.RegisterRoute(r)
 
