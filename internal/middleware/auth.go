@@ -12,27 +12,22 @@ import (
 	"github.com/mhasnanr/ewallet-ums/internal/models"
 )
 
-type UserRepository interface {
-	Register(context.Context, models.User) error
-	GetUserByEmail(context.Context, string) (models.User, error)
-	CreateUserSession(context.Context, models.UserSession) error
+type SessionRepository interface {
 	GetUserSessionByRefreshToken(context.Context, string) error
 }
 
 type JWTManager interface {
-	HashPassword(password string) (string, error)
-	VerifyPassword(hashed string, plain string) error
 	GenerateToken(user models.User, tokenType string) (string, error)
 	ValidateToken(ctx context.Context, token string) (*helpers.ClaimToken, error)
 }
 
 type AuthMiddleware struct {
-	repo       UserRepository
-	jwtManager JWTManager
+	sessionRepo SessionRepository
+	jwtManager  JWTManager
 }
 
-func NewAuthMiddleware(repo UserRepository, jwtManager JWTManager) *AuthMiddleware {
-	return &AuthMiddleware{repo, jwtManager}
+func NewAuthMiddleware(sessionRepo SessionRepository, jwtManager JWTManager) *AuthMiddleware {
+	return &AuthMiddleware{sessionRepo, jwtManager}
 }
 
 func (a *AuthMiddleware) MiddlewareRefreshToken(c *gin.Context) {
@@ -54,7 +49,7 @@ func (a *AuthMiddleware) MiddlewareRefreshToken(c *gin.Context) {
 		return
 	}
 
-	err := a.repo.GetUserSessionByRefreshToken(c.Request.Context(), refreshToken)
+	err := a.sessionRepo.GetUserSessionByRefreshToken(c.Request.Context(), refreshToken)
 	if err != nil {
 		log.Infow("failed to get user session on DB: ", err)
 		helpers.SendResponseHTTP(c, http.StatusUnauthorized, "unauthorized", nil)

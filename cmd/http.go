@@ -21,10 +21,14 @@ func ServeHTTP(db *gorm.DB) {
 		c.JSON(200, gin.H{"message": "server is healthy"})
 	})
 
-	jwtApp := &helpers.JWTApp{}
+	jwtManager := &helpers.JWTManager{}
+	passwordHasher := &helpers.PasswordHasher{}
+
 	userRepository := repository.NewUserRepository(db)
-	authMiddleware := middleware.NewAuthMiddleware(userRepository, jwtApp)
-	userService := services.NewUserService(userRepository, jwtApp)
+	sessionRepository := repository.NewSessionRepository(db)
+
+	authMiddleware := middleware.NewAuthMiddleware(sessionRepository, jwtManager)
+	userService := services.NewUserService(userRepository, sessionRepository, jwtManager, passwordHasher)
 	userHandler := handler.NewUserHandler(userService, authMiddleware)
 
 	userHandler.RegisterRoute(r)
