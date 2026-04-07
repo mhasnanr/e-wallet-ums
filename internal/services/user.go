@@ -10,9 +10,12 @@ import (
 	"github.com/mhasnanr/ewallet-ums/internal/models"
 )
 
-type JWTManager interface {
+type PasswordHasher interface {
 	HashPassword(password string) (string, error)
 	VerifyPassword(hashed string, plain string) error
+}
+
+type JWTManager interface {
 	GenerateToken(user models.User, tokenType string) (string, error)
 	ValidateToken(ctx context.Context, token string) (*helpers.ClaimToken, error)
 }
@@ -20,22 +23,27 @@ type JWTManager interface {
 type UserRepository interface {
 	Register(context.Context, models.User) error
 	GetUserByEmail(context.Context, string) (models.User, error)
+}
+
+type SessionRepository interface {
 	CreateUserSession(context.Context, models.UserSession) error
 	GetUserSessionByRefreshToken(context.Context, string) error
 	UpdateTokenByRefreshToken(context.Context, string, string) error
 }
 
 type UserService struct {
-	repo       UserRepository
-	jwtManager JWTManager
+	userRepo    UserRepository
+	sessionRepo SessionRepository
+	jwtManager  JWTManager
+	pwHasher    PasswordHasher
 }
 
-func NewUserService(repo UserRepository, jwtManager JWTManager) *UserService {
-	return &UserService{repo: repo, jwtManager: jwtManager}
+func NewUserService(userRepo UserRepository, sessionRepo SessionRepository, jwtManager JWTManager, pwHasher PasswordHasher) *UserService {
+	return &UserService{userRepo, sessionRepo, jwtManager, pwHasher}
 }
 
 func (s *UserService) Register(ctx context.Context, user models.User) error {
-	returnedUser, err := s.repo.GetUserByEmail(ctx, user.Email)
+	returnedUser, err := s.userRepo.GetUserByEmail(ctx, user.Email)
 	if returnedUser.ID != 0 {
 		return errors.New(constants.ErrDuplicateEmail)
 	}
@@ -44,14 +52,14 @@ func (s *UserService) Register(ctx context.Context, user models.User) error {
 		return err
 	}
 
-	hashedPassword, err := s.jwtManager.HashPassword(user.Password)
+	hashedPassword, err := s.pwHasher.HashPassword(user.Password)
 	if err != nil {
 		return err
 	}
 
 	user.Password = hashedPassword
 
-	return s.repo.Register(ctx, user)
+	return s.userRepo.Register(ctx, user)
 }
 
 func (s *UserService) Login(ctx context.Context, req models.LoginRequest) (models.LoginResponse, error) {
@@ -60,7 +68,7 @@ func (s *UserService) Login(ctx context.Context, req models.LoginRequest) (model
 		now      = time.Now()
 	)
 
-	returnedUser, err := s.repo.GetUserByEmail(ctx, req.Email)
+	returnedUser, err := s.userRepo.GetUserByEmail(ctx, req.Email)
 	if returnedUser.ID == 0 {
 		return response, errors.New(constants.ErrUserNotFound)
 	}
@@ -69,7 +77,7 @@ func (s *UserService) Login(ctx context.Context, req models.LoginRequest) (model
 		return response, err
 	}
 
-	err = s.jwtManager.VerifyPassword(returnedUser.Password, req.Password)
+	err = s.pwHasher.VerifyPassword(returnedUser.Password, req.Password)
 	if err != nil {
 		return response, err
 	}
@@ -94,7 +102,7 @@ func (s *UserService) Login(ctx context.Context, req models.LoginRequest) (model
 		RefreshTokenExpired: now.Add(helpers.MapTypeToken["refresh_token"]),
 	}
 
-	err = s.repo.CreateUserSession(ctx, userSession)
+	err = s.sessionRepo.CreateUserSession(ctx, userSession)
 	if err != nil {
 		return response, errors.New("failed to create user session")
 	}
@@ -119,7 +127,7 @@ func (s *UserService) UpdateTokenByRefreshToken(ctx context.Context, refreshToke
 		return newToken, errors.New("failed to generate token")
 	}
 
-	err = s.repo.UpdateTokenByRefreshToken(ctx, newToken, refreshToken)
+	err = s.sessionRepo.UpdateTokenByRefreshToken(ctx, newToken, refreshToken)
 	if err != nil {
 		return newToken, errors.New("failed to update token")
 	}
