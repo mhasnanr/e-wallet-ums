@@ -8,10 +8,9 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/mhasnanr/ewallet-ums/bootstrap"
 	"github.com/mhasnanr/ewallet-ums/internal/models"
-	"golang.org/x/crypto/bcrypt"
 )
 
-type JWTApp struct{}
+type JWTManager struct{}
 
 type ClaimToken struct {
 	UserID   int    `json:"user_id"`
@@ -28,25 +27,7 @@ var MapTypeToken = map[string]time.Duration{
 
 var jwtSecret = []byte(bootstrap.GetEnv("APP_SECRET", ""))
 
-func (j *JWTApp) HashPassword(password string) (string, error) {
-	hashedByte, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return "", fmt.Errorf("failed to hash password")
-	}
-
-	return string(hashedByte), nil
-}
-
-func (j *JWTApp) VerifyPassword(hashed string, plain string) error {
-	err := bcrypt.CompareHashAndPassword([]byte(hashed), []byte(plain))
-	if err != nil {
-		return fmt.Errorf("password is invalid")
-	}
-
-	return nil
-}
-
-func (j *JWTApp) GenerateToken(user models.User, tokenType string) (string, error) {
+func (j *JWTManager) GenerateToken(user models.User, tokenType string) (string, error) {
 	now := time.Now()
 
 	claimToken := ClaimToken{
@@ -70,7 +51,7 @@ func (j *JWTApp) GenerateToken(user models.User, tokenType string) (string, erro
 	return tokenString, nil
 }
 
-func (j *JWTApp) ValidateToken(ctx context.Context, token string) (*ClaimToken, error) {
+func (j *JWTManager) ValidateToken(ctx context.Context, token string) (*ClaimToken, error) {
 	var (
 		claimToken *ClaimToken
 		ok         bool
