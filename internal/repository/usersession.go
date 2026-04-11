@@ -28,7 +28,7 @@ func (r *SessionRepository) CreateUserSession(ctx context.Context, userSession m
 
 func (r *SessionRepository) GetUserSessionByRefreshToken(ctx context.Context, refreshToken string) error {
 	var userSession models.UserSession
-	err := r.DB.Where("refresh_token = ?", refreshToken).First(&userSession)
+	err := r.DB.Where("refresh_token = ?", refreshToken).Last(&userSession)
 	if err.Error != nil {
 		return err.Error
 	}
@@ -37,12 +37,12 @@ func (r *SessionRepository) GetUserSessionByRefreshToken(ctx context.Context, re
 
 func (r *SessionRepository) UpdateTokenByRefreshToken(ctx context.Context, token string, refreshToken string) error {
 	var userSession models.UserSession
-	err := r.DB.Where("refresh_token = ?", refreshToken).First(&userSession).Error
+	err := r.DB.Where("refresh_token = ?", refreshToken).Last(&userSession).Error
 	if err != nil {
 		return err
 	}
 
-	err = r.DB.Model(&userSession).Update("token", token).Updates(map[string]interface{}{
+	err = r.DB.Model(&userSession).Update("token", token).Updates(map[string]any{
 		"token":         token,
 		"token_expired": time.Now().Add(helpers.MapTypeToken["token"]),
 	}).Error
