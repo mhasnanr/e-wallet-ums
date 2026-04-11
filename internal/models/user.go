@@ -7,7 +7,7 @@ import (
 )
 
 type User struct {
-	ID          int       `json:"id" gorm:"primaryKey"`
+	ID          int       `json:"id" gorm:"primarykey"`
 	Username    string    `json:"username" gorm:"column:username;type:varchar(20)" validate:"required"`
 	Email       string    `json:"email" gorm:"column:email;type:varchar(100)" validate:"required"`
 	PhoneNumber string    `json:"phone_number" gorm:"column:phone_number;type:varchar(15)"`
@@ -34,7 +34,6 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	UserID       int    `json:"user_id"`
 	Token        string `json:"token"`
 	RefreshToken string `json:"refresh_token"`
 }
@@ -45,7 +44,7 @@ func (m *LoginRequest) Validate() error {
 }
 
 type UserSession struct {
-	ID                  uint      `gorm:"primaryKey"`
+	ID                  uint      `gorm:"primarykey"`
 	UserID              uint      `json:"user_id" gorm:"type:int" validate:"required"`
 	Token               string    `json:"token" gorm:"type:text" validate:"required"`
 	RefreshToken        string    `json:"refresh_token" gorm:"type:text" validate:"required"`

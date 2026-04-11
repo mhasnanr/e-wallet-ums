@@ -45,7 +45,7 @@ func NewUserService(userRepo UserRepository, sessionRepo SessionRepository, jwtM
 func (s *UserService) Register(ctx context.Context, user models.User) error {
 	returnedUser, err := s.userRepo.GetUserByEmail(ctx, user.Email)
 	if returnedUser.ID != 0 {
-		return errors.New(constants.ErrDuplicateEmail)
+		return constants.ErrorDuplicateEmail
 	}
 
 	if err != nil {
@@ -70,7 +70,7 @@ func (s *UserService) Login(ctx context.Context, req models.LoginRequest) (model
 
 	returnedUser, err := s.userRepo.GetUserByEmail(ctx, req.Email)
 	if returnedUser.ID == 0 {
-		return response, errors.New(constants.ErrUserNotFound)
+		return response, constants.ErrorUserNotFound
 	}
 
 	if err != nil {
@@ -107,14 +107,13 @@ func (s *UserService) Login(ctx context.Context, req models.LoginRequest) (model
 		return response, errors.New("failed to create user session")
 	}
 
-	response.UserID = returnedUser.ID
 	response.Token = token
 	response.RefreshToken = refreshToken
 
 	return response, nil
 }
 
-func (s *UserService) UpdateTokenByRefreshToken(ctx context.Context, refreshToken string, claims helpers.ClaimToken) (string, error) {
+func (s *UserService) UpdateTokenByRefreshToken(ctx context.Context, refreshToken string, claims *helpers.ClaimToken) (string, error) {
 	var user models.User
 
 	user.ID = claims.UserID
