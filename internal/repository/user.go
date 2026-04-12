@@ -70,3 +70,12 @@ func (r *UserRepository) UpdateTokenByRefreshToken(ctx context.Context, token st
 
 	return nil
 }
+
+func (r *UserRepository) DeleteUser(ctx context.Context, userID int) error {
+	err := r.DB.Where("id = ?", userID).Delete(&models.User{}).Error 
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

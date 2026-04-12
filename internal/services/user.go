@@ -24,6 +24,7 @@ type JWTManager interface {
 type UserRepository interface {
 	Register(context.Context, *models.User) (*models.User, error)
 	GetUserByEmail(context.Context, string) (models.User, error)
+	DeleteUser(context.Context, int) (error)
 }
 
 type WalletAPI interface {
@@ -70,7 +71,9 @@ func (s *UserService) Register(ctx context.Context, user *models.User) (*models.
 	user.Password = ""
 
 	if err := s.walletAPI.CreateWallet(user.ID); err != nil {
-		fmt.Println("di sini", err)
+		if err := s.userRepo.DeleteUser(ctx, user.ID); err != nil {
+			return  nil, err
+		}	
 		return nil, err
 	}
 

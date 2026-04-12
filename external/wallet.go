@@ -20,7 +20,7 @@ func (w *ExternalWallet) CreateWallet(userID int) error {
 	postBody, _ := json.Marshal(WalletRequest{UserID: userID})
 	requestBody := bytes.NewBuffer(postBody)
 
-	resp, err := http.Post("http://localhost:8081/wallets/v1", "application/json", requestBody)
+	resp, err := http.Post("http://localhost:8081/wallets/1", "application/json", requestBody)
 	if err != nil {
 		return err
 	}
