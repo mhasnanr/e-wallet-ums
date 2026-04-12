@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/mhasnanr/ewallet-ums/constants"
 )
 
 type ExternalWallet struct{}
@@ -20,7 +22,7 @@ func (w *ExternalWallet) CreateWallet(userID int) error {
 	postBody, _ := json.Marshal(WalletRequest{UserID: userID})
 	requestBody := bytes.NewBuffer(postBody)
 
-	resp, err := http.Post("http://localhost:8081/wallets/1", "application/json", requestBody)
+	resp, err := http.Post("http://localhost:8081/wallets/v1", "application/json", requestBody)
 	if err != nil {
 		return err
 	}
@@ -32,7 +34,9 @@ func (w *ExternalWallet) CreateWallet(userID int) error {
 	}
 
 	if resp.StatusCode != http.StatusCreated {
-		return fmt.Errorf("wallet service error: status %d: %s", resp.StatusCode, string(body))
+		errorStr := fmt.Errorf("wallet service error: status %d: %s", resp.StatusCode, string(body))
+		fmt.Println(errorStr)
+		return constants.ErrorFailedToCreateWallet
 	}
 
 	return nil

@@ -19,6 +19,7 @@ var (
 	ErrFailedToUpdateToken   = "failed to update token"
 	ErrFailedToGenerateToken = "failed to generate token"
 	ErrFailedToCreateSession = "failed to create session"
+	ErrFailedToCreateWallet  = "failed to create wallet"
 )
 
 var ValidationErrorMap = map[string]map[string]string{
@@ -56,6 +57,7 @@ var (
 	ErrorFailedToUpdateToken   = NewAppError(http.StatusInternalServerError, ErrFailedToUpdateToken)
 	ErrorFailedToGenerateToken = NewAppError(http.StatusInternalServerError, ErrFailedToGenerateToken)
 	ErrorFailedToCreateSession = NewAppError(http.StatusInternalServerError, ErrFailedToCreateSession)
+	ErrorFailedToCreateWallet  = NewAppError(http.StatusInternalServerError, ErrFailedToCreateWallet)
 )
 
 var (
