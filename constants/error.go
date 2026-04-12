@@ -2,15 +2,32 @@ package constants
 
 import "net/http"
 
+var ErrBadRequest = "bad request"
+
 var (
-	ErrFieldBadRequest  = "data is not valid"
-	ErrDuplicateEmail   = "email is already registered"
-	ErrUserNotFound     = "user not found"
-	ErrRequiredEmail    = "email is required"
-	ErrRequiredUsername = "username is required"
-	ErrRequiredPassword = "password is required"
-	ErrSessionNotFound 	= "user session not found"
+	ErrRequiredEmail         = "email is required"
+	ErrRequiredUsername      = "username is required"
+	ErrRequiredPassword      = "password is required"
+	ErrRequiredFullName      = "full name is required"
+	ErrDuplicateEmail        = "email is already registered"
+	ErrUserNotFound          = "user not found"
+	ErrSessionNotFound       = "user session not found"
+	ErrFailedToGetToken      = "failed to get token"
+	ErrFailedToParseToken    = "failed to parse token"
+	ErrFailedToExtractClaims = "failed to extract claims"
+	ErrFailedToParseClaims   = "failed to parse claims"
+	ErrFailedToUpdateToken   = "failed to update token"
+	ErrFailedToGenerateToken = "failed to generate token"
+	ErrFailedToCreateSession = "failed to create session"
 )
+
+var ValidationErrorMap = map[string]map[string]string{
+	"required": {
+		"User.Email":    ErrRequiredEmail,
+		"User.FullName": ErrRequiredFullName,
+		"User.Password": ErrRequiredPassword,
+	},
+}
 
 type AppError struct {
 	StatusCode int
@@ -26,8 +43,21 @@ func NewAppError(statusCode int, message string) *AppError {
 }
 
 var (
-	ErrorDuplicateEmail  = NewAppError(http.StatusConflict, ErrDuplicateEmail)
-	ErrorRequiredEmail   = NewAppError(http.StatusBadRequest, ErrRequiredEmail)
-	ErrorUserNotFound    = NewAppError(http.StatusNotFound, ErrUserNotFound)
-	ErrorSessionNotFound = NewAppError(http.StatusNotFound, ErrSessionNotFound)
+	ErrorBadRequest = NewAppError(http.StatusBadRequest, ErrBadRequest)
+
+	ErrorDuplicateEmail        = NewAppError(http.StatusConflict, ErrDuplicateEmail)
+	ErrorRequiredEmail         = NewAppError(http.StatusBadRequest, ErrRequiredEmail)
+	ErrorUserNotFound          = NewAppError(http.StatusNotFound, ErrUserNotFound)
+	ErrorSessionNotFound       = NewAppError(http.StatusNotFound, ErrSessionNotFound)
+	ErrorFailedToGetToken      = NewAppError(http.StatusInternalServerError, ErrFailedToGetToken)
+	ErrorFailedToParseToken    = NewAppError(http.StatusInternalServerError, ErrFailedToParseToken)
+	ErrorFailedToExtractClaims = NewAppError(http.StatusInternalServerError, ErrFailedToExtractClaims)
+	ErrorFailedToParseClaims   = NewAppError(http.StatusInternalServerError, ErrFailedToParseClaims)
+	ErrorFailedToUpdateToken   = NewAppError(http.StatusInternalServerError, ErrFailedToUpdateToken)
+	ErrorFailedToGenerateToken = NewAppError(http.StatusInternalServerError, ErrFailedToGenerateToken)
+	ErrorFailedToCreateSession = NewAppError(http.StatusInternalServerError, ErrFailedToCreateSession)
+)
+
+var (
+	ErrorValidationUserEmail = NewAppError(http.StatusBadRequest, ErrRequiredEmail)
 )
