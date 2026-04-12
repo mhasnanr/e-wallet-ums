@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"github.com/mhasnanr/ewallet-ums/constants"
 	"github.com/mhasnanr/ewallet-ums/helpers"
 	"github.com/mhasnanr/ewallet-ums/internal/models"
 	"gorm.io/gorm"
@@ -19,9 +21,9 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 
 func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (models.User, error) {
 	var user models.User
-	err := r.DB.Where("email = ?", email).First(&user)
-	if err.Error != nil {
-		return user, err.Error
+	res := r.DB.Where("email = ?", email).First(&user)
+	if res.Error != nil {
+		return user, res.Error
 	}
 	return user, nil
 }
@@ -46,25 +48,27 @@ func (r *UserRepository) CreateUserSession(ctx context.Context, userSession mode
 
 func (r *UserRepository) GetUserSessionByRefreshToken(ctx context.Context, refreshToken string) error {
 	var userSession models.UserSession
-	err := r.DB.Where("refresh_token = ?", refreshToken).First(&userSession)
-	if err.Error != nil {
-		return err.Error
+	err := r.DB.Where("refresh_token = ?", refreshToken).First(&userSession).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return constants.ErrorSessionNotFound
+		}
+		return err
 	}
 	return nil
 }
 
 func (r *UserRepository) UpdateTokenByRefreshToken(ctx context.Context, token string, refreshToken string) error {
-	var userSession models.UserSession
-	err := r.DB.Where("refresh_token = ?", refreshToken).First(&userSession).Error
+	err := r.DB.Model(&models.UserSession{}).
+		Where("refresh_token = ?", refreshToken).
+		Updates(map[string]any{
+			"token":         token,
+			"token_expired": time.Now().Add(helpers.MapTypeToken["token"]),
+		}).Error
 	if err != nil {
-		return err
-	}
-
-	err = r.DB.Model(&userSession).Update("token", token).Updates(map[string]any{
-		"token":         token,
-		"token_expired": time.Now().Add(helpers.MapTypeToken["token"]),
-	}).Error
-	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return constants.ErrorSessionNotFound
+		}
 		return err
 	}
 
@@ -72,8 +76,11 @@ func (r *UserRepository) UpdateTokenByRefreshToken(ctx context.Context, token st
 }
 
 func (r *UserRepository) DeleteUser(ctx context.Context, userID int) error {
-	err := r.DB.Where("id = ?", userID).Delete(&models.User{}).Error 
+	err := r.DB.Where("id = ?", userID).Delete(&models.User{}).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return constants.ErrorSessionNotFound
+		}
 		return err
 	}
 
