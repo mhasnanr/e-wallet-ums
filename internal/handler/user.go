@@ -176,6 +176,9 @@ func (r *UserHandler) validateToken(c *gin.Context) {
 	}
 
 	response.UserID = claim.UserID
+	response.Email = claim.Email
+	response.Username = claim.Username
+	response.Fullname = claim.Username
 
 	helpers.SendResponseHTTP(c, http.StatusOK, constants.ValidToken, response)
 }
