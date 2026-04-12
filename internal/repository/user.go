@@ -26,13 +26,13 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (mode
 	return user, nil
 }
 
-func (r *UserRepository) Register(ctx context.Context, user models.User) error {
-	err := gorm.G[models.User](r.DB).Create(ctx, &user)
+func (r *UserRepository) Register(ctx context.Context, user *models.User) (*models.User, error) {
+	err := gorm.G[models.User](r.DB).Create(ctx, user)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return user, nil
 }
 
 func (r *UserRepository) CreateUserSession(ctx context.Context, userSession models.UserSession) error {
@@ -60,7 +60,7 @@ func (r *UserRepository) UpdateTokenByRefreshToken(ctx context.Context, token st
 		return err
 	}
 
-	err = r.DB.Model(&userSession).Update("token", token).Updates(map[string]interface{}{
+	err = r.DB.Model(&userSession).Update("token", token).Updates(map[string]any{
 		"token":         token,
 		"token_expired": time.Now().Add(helpers.MapTypeToken["token"]),
 	}).Error

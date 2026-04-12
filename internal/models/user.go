@@ -14,7 +14,7 @@ type User struct {
 	FullName    string    `json:"full_name" gorm:"column:full_name;type:varchar(100)" validate:"required"`
 	Address     string    `json:"address" gorm:"column:address;type:text"`
 	DateOfBirth string    `json:"dob" gorm:"column:dob;type:date"`
-	Password    string    `json:"password" gorm:"column:password;type:varchar(255)" validate:"required"`
+	Password    string    `json:"password,omitempty" gorm:"column:password;type:varchar(255)" validate:"required"`
 	CreatedAt   time.Time `json:"-"`
 	UpdatedAt   time.Time `json:"-"`
 }

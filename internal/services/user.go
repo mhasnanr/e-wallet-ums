@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/mhasnanr/ewallet-ums/constants"
@@ -21,8 +22,12 @@ type JWTManager interface {
 }
 
 type UserRepository interface {
-	Register(context.Context, models.User) error
+	Register(context.Context, *models.User) (*models.User, error)
 	GetUserByEmail(context.Context, string) (models.User, error)
+}
+
+type WalletAPI interface {
+	CreateWallet(userID int) error
 }
 
 type SessionRepository interface {
@@ -37,30 +42,39 @@ type UserService struct {
 	sessionRepo SessionRepository
 	jwtManager  JWTManager
 	pwHasher    PasswordHasher
+	walletAPI   WalletAPI
 }
 
-func NewUserService(userRepo UserRepository, sessionRepo SessionRepository, jwtManager JWTManager, pwHasher PasswordHasher) *UserService {
-	return &UserService{userRepo, sessionRepo, jwtManager, pwHasher}
+func NewUserService(userRepo UserRepository, sessionRepo SessionRepository, jwtManager JWTManager, pwHasher PasswordHasher, walletAPI WalletAPI) *UserService {
+	return &UserService{userRepo, sessionRepo, jwtManager, pwHasher, walletAPI}
 }
 
-func (s *UserService) Register(ctx context.Context, user models.User) error {
+func (s *UserService) Register(ctx context.Context, user *models.User) (*models.User, error) {
 	returnedUser, err := s.userRepo.GetUserByEmail(ctx, user.Email)
 	if returnedUser.ID != 0 {
-		return constants.ErrorDuplicateEmail
-	}
-
-	if err != nil {
-		return err
+		return nil, constants.ErrorDuplicateEmail
 	}
 
 	hashedPassword, err := s.pwHasher.HashPassword(user.Password)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	user.Password = hashedPassword
 
-	return s.userRepo.Register(ctx, user)
+	user, err = s.userRepo.Register(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	user.Password = ""
+
+	if err := s.walletAPI.CreateWallet(user.ID); err != nil {
+		fmt.Println("di sini", err)
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (s *UserService) Login(ctx context.Context, req models.LoginRequest) (models.LoginResponse, error) {
@@ -135,6 +149,6 @@ func (s *UserService) UpdateTokenByRefreshToken(ctx context.Context, refreshToke
 	return newToken, nil
 }
 
-func (s *UserService) Logout(ctx context.Context, accessToken string) (error) {
+func (s *UserService) Logout(ctx context.Context, accessToken string) error {
 	return s.sessionRepo.DeleteUserSessionByToken(ctx, accessToken)
 }

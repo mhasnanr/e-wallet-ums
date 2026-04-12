@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mhasnanr/ewallet-ums/bootstrap"
+	"github.com/mhasnanr/ewallet-ums/external"
 	"github.com/mhasnanr/ewallet-ums/helpers"
 	"github.com/mhasnanr/ewallet-ums/internal/handler"
 	"github.com/mhasnanr/ewallet-ums/internal/middleware"
@@ -23,12 +24,13 @@ func ServeHTTP(db *gorm.DB) {
 
 	jwtManager := &helpers.JWTManager{}
 	passwordHasher := &helpers.PasswordHasher{}
+	walletExternal := &external.ExternalWallet{}
 
 	userRepository := repository.NewUserRepository(db)
 	sessionRepository := repository.NewSessionRepository(db)
 
 	authMiddleware := middleware.NewAuthMiddleware(sessionRepository, jwtManager)
-	userService := services.NewUserService(userRepository, sessionRepository, jwtManager, passwordHasher)
+	userService := services.NewUserService(userRepository, sessionRepository, jwtManager, passwordHasher, walletExternal)
 	userHandler := handler.NewUserHandler(userService, authMiddleware)
 
 	userHandler.RegisterRoute(r)

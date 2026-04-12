@@ -11,7 +11,7 @@ import (
 )
 
 type UserService interface {
-	Register(context.Context, models.User) error
+	Register(context.Context, *models.User) (*models.User, error)
 	Login(context.Context, models.LoginRequest) (models.LoginResponse, error)
 	UpdateTokenByRefreshToken(context.Context, string, *helpers.ClaimToken) (string, error)
 	Logout(context.Context, string) error
@@ -54,13 +54,13 @@ func (r *UserHandler) registerUser(c *gin.Context) {
 		return
 	}
 
-	err := r.service.Register(c.Request.Context(), req)
+	user, err := r.service.Register(c.Request.Context(), &req)
 	if err != nil {
 		helpers.SendResponseHTTP(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 
-	helpers.SendResponseHTTP(c, http.StatusCreated, constants.MsgUserCreated, nil)
+	helpers.SendResponseHTTP(c, http.StatusCreated, constants.MsgUserCreated, user)
 }
 
 func (r *UserHandler) login(c *gin.Context) {
