@@ -14,6 +14,7 @@ type UserService interface {
 	Register(context.Context, models.User) error
 	Login(context.Context, models.LoginRequest) (models.LoginResponse, error)
 	UpdateTokenByRefreshToken(context.Context, string, *helpers.ClaimToken) (string, error)
+	Logout(context.Context, string) error
 }
 
 type AuthMiddleware interface {
@@ -34,6 +35,7 @@ func (r *UserHandler) RegisterRoute(c *gin.Engine) {
 	userV1 := c.Group("/users/v1")
 	userV1.POST("/register", r.registerUser)
 	userV1.POST("/login", r.login)
+	userV1.DELETE("/logout", r.authMiddleware.MiddlewareAccessToken, r.logout)
 	userV1.GET("/token/refresh", r.authMiddleware.MiddlewareRefreshToken, r.refreshToken)
 	userV1.GET("/token/validate", r.authMiddleware.MiddlewareAccessToken, r.validateToken)
 
@@ -81,6 +83,28 @@ func (r *UserHandler) login(c *gin.Context) {
 	}
 
 	helpers.SendResponseHTTP(c, http.StatusCreated, constants.MsgLoginSucceed, res)
+}
+
+func (r *UserHandler) logout(c *gin.Context) {
+	token, ok := c.Get("accessToken")
+	if !ok {
+		helpers.SendResponseHTTP(c, http.StatusInternalServerError, "failed to get token", nil)
+		return
+	}
+
+	accessToken, ok := token.(string)
+	if !ok {
+		helpers.SendResponseHTTP(c, http.StatusInternalServerError, "failed to parse token", nil)
+		return
+	}
+
+	err := r.service.Logout(c.Request.Context(), accessToken)
+	if err != nil {
+		helpers.SendResponseHTTP(c, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+
+	helpers.SendResponseHTTP(c, http.StatusNoContent, constants.MsgLogoutSucceed, nil)
 }
 
 func (r *UserHandler) refreshToken(c *gin.Context) {

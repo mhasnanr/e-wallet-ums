@@ -29,6 +29,7 @@ type SessionRepository interface {
 	CreateUserSession(context.Context, models.UserSession) error
 	GetUserSessionByRefreshToken(context.Context, string) error
 	UpdateTokenByRefreshToken(context.Context, string, string) error
+	DeleteUserSessionByToken(context.Context, string) error
 }
 
 type UserService struct {
@@ -132,4 +133,8 @@ func (s *UserService) UpdateTokenByRefreshToken(ctx context.Context, refreshToke
 	}
 
 	return newToken, nil
+}
+
+func (s *UserService) Logout(ctx context.Context, accessToken string) (error) {
+	return s.sessionRepo.DeleteUserSessionByToken(ctx, accessToken)
 }

@@ -9,6 +9,7 @@ var (
 	ErrRequiredEmail    = "email is required"
 	ErrRequiredUsername = "username is required"
 	ErrRequiredPassword = "password is required"
+	ErrSessionNotFound 	= "user session not found"
 )
 
 type AppError struct {
@@ -25,7 +26,8 @@ func NewAppError(statusCode int, message string) *AppError {
 }
 
 var (
-	ErrorDuplicateEmail = NewAppError(http.StatusConflict, ErrDuplicateEmail)
-	ErrorRequiredEmail  = NewAppError(http.StatusBadRequest, ErrRequiredEmail)
-	ErrorUserNotFound   = NewAppError(http.StatusNotFound, ErrUserNotFound)
+	ErrorDuplicateEmail  = NewAppError(http.StatusConflict, ErrDuplicateEmail)
+	ErrorRequiredEmail   = NewAppError(http.StatusBadRequest, ErrRequiredEmail)
+	ErrorUserNotFound    = NewAppError(http.StatusNotFound, ErrUserNotFound)
+	ErrorSessionNotFound = NewAppError(http.StatusNotFound, ErrSessionNotFound)
 )
