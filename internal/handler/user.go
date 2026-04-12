@@ -34,112 +34,112 @@ func NewUserHandler(svc UserService, authMiddleware AuthMiddleware) *UserHandler
 	return &UserHandler{service: svc, authMiddleware: authMiddleware}
 }
 
-func (r *UserHandler) RegisterRoute(c *gin.Engine) {
+func (h *UserHandler) RegisterRoute(c *gin.Engine) {
 	userV1 := c.Group("/users/v1")
-	userV1.POST("/register", r.registerUser)
-	userV1.POST("/login", r.login)
-	userV1.DELETE("/logout", r.authMiddleware.MiddlewareAccessToken, r.logout)
-	userV1.GET("/token/refresh", r.authMiddleware.MiddlewareRefreshToken, r.refreshToken)
-	userV1.GET("/token/validate", r.authMiddleware.MiddlewareAccessToken, r.validateToken)
+	userV1.POST("/register", h.registerUser)
+	userV1.POST("/login", h.login)
+	userV1.DELETE("/logout", h.authMiddleware.MiddlewareAccessToken, h.logout)
+	userV1.GET("/token/refresh", h.authMiddleware.MiddlewareRefreshToken, h.refreshToken)
+	userV1.GET("/token/validate", h.authMiddleware.MiddlewareAccessToken, h.validateToken)
 
 }
 
-func (r *UserHandler) registerUser(c *gin.Context) {
+func (h *UserHandler) registerUser(c *gin.Context) {
 	var req models.User
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		r.writeErrorResponse(c, constants.ErrorBadRequest, nil)
+		h.writeErrorResponse(c, constants.ErrorBadRequest, nil)
 		return
 	}
 
 	if err := req.Validate(); err != nil {
-		r.writeErrorResponse(c, err, nil)
+		h.writeErrorResponse(c, err, nil)
 		return
 	}
 
-	user, err := r.service.Register(c.Request.Context(), &req)
+	user, err := h.service.Register(c.Request.Context(), &req)
 	if err != nil {
-		r.writeErrorResponse(c, err, nil)
+		h.writeErrorResponse(c, err, nil)
 		return
 	}
 
 	helpers.SendResponseHTTP(c, http.StatusCreated, constants.UserCreated, user)
 }
 
-func (r *UserHandler) login(c *gin.Context) {
+func (h *UserHandler) login(c *gin.Context) {
 	var req models.LoginRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		r.writeErrorResponse(c, constants.ErrorBadRequest, nil)
+		h.writeErrorResponse(c, constants.ErrorBadRequest, nil)
 		return
 	}
 
 	if err := req.Validate(); err != nil {
-		r.writeErrorResponse(c, err, nil)
+		h.writeErrorResponse(c, err, nil)
 		return
 	}
 
-	res, err := r.service.Login(c.Request.Context(), req)
+	res, err := h.service.Login(c.Request.Context(), req)
 	if err != nil {
-		r.writeErrorResponse(c, err, nil)
+		h.writeErrorResponse(c, err, nil)
 		return
 	}
 
 	helpers.SendResponseHTTP(c, http.StatusOK, constants.LoginSucceed, res)
 }
 
-func (r *UserHandler) logout(c *gin.Context) {
+func (h *UserHandler) logout(c *gin.Context) {
 	token, ok := c.Get("accessToken")
 	if !ok {
-		r.writeErrorResponse(c, constants.ErrorFailedToGetToken, nil)
+		h.writeErrorResponse(c, constants.ErrorFailedToGetToken, nil)
 		return
 	}
 
 	accessToken, ok := token.(string)
 	if !ok {
-		r.writeErrorResponse(c, constants.ErrorFailedToParseToken, nil)
+		h.writeErrorResponse(c, constants.ErrorFailedToParseToken, nil)
 		return
 	}
 
-	err := r.service.Logout(c.Request.Context(), accessToken)
+	err := h.service.Logout(c.Request.Context(), accessToken)
 	if err != nil {
-		r.writeErrorResponse(c, err, nil)
+		h.writeErrorResponse(c, err, nil)
 		return
 	}
 
 	helpers.SendResponseHTTP(c, http.StatusNoContent, constants.LoginSucceed, nil)
 }
 
-func (r *UserHandler) refreshToken(c *gin.Context) {
+func (h *UserHandler) refreshToken(c *gin.Context) {
 	var response dto.RefreshTokenResponse
 
 	token, ok := c.Get("refreshToken")
 	if !ok {
-		r.writeErrorResponse(c, constants.ErrorFailedToGetToken, nil)
+		h.writeErrorResponse(c, constants.ErrorFailedToGetToken, nil)
 		return
 	}
 
 	refreshToken, ok := token.(string)
 	if !ok {
-		r.writeErrorResponse(c, constants.ErrorFailedToParseToken, nil)
+		h.writeErrorResponse(c, constants.ErrorFailedToParseToken, nil)
 		return
 	}
 
 	val, ok := c.Get("claim")
 	if !ok {
-		r.writeErrorResponse(c, constants.ErrorFailedToExtractClaims, nil)
+		h.writeErrorResponse(c, constants.ErrorFailedToExtractClaims, nil)
 		return
 	}
 
 	claim, ok := val.(*helpers.ClaimToken)
 	if !ok {
-		r.writeErrorResponse(c, constants.ErrorFailedToParseClaims, nil)
+		h.writeErrorResponse(c, constants.ErrorFailedToParseClaims, nil)
 		return
 	}
 
-	newToken, err := r.service.UpdateTokenByRefreshToken(c.Request.Context(), refreshToken, claim)
+	newToken, err := h.service.UpdateTokenByRefreshToken(c.Request.Context(), refreshToken, claim)
 	if err != nil {
-		r.writeErrorResponse(c, constants.ErrorFailedToUpdateToken, nil)
+		h.writeErrorResponse(c, constants.ErrorFailedToUpdateToken, nil)
 		return
 	}
 
@@ -148,30 +148,30 @@ func (r *UserHandler) refreshToken(c *gin.Context) {
 	helpers.SendResponseHTTP(c, http.StatusOK, constants.NewToken, response)
 }
 
-func (r *UserHandler) validateToken(c *gin.Context) {
+func (h *UserHandler) validateToken(c *gin.Context) {
 	var response dto.ValidateTokenResponse
 
 	token, ok := c.Get("accessToken")
 	if !ok {
-		r.writeErrorResponse(c, constants.ErrorFailedToGetToken, nil)
+		h.writeErrorResponse(c, constants.ErrorFailedToGetToken, nil)
 		return
 	}
 
 	_, ok = token.(string)
 	if !ok {
-		r.writeErrorResponse(c, constants.ErrorFailedToParseToken, nil)
+		h.writeErrorResponse(c, constants.ErrorFailedToParseToken, nil)
 		return
 	}
 
 	val, ok := c.Get("claim")
 	if !ok {
-		r.writeErrorResponse(c, constants.ErrorFailedToExtractClaims, nil)
+		h.writeErrorResponse(c, constants.ErrorFailedToExtractClaims, nil)
 		return
 	}
 
 	claim, ok := val.(*helpers.ClaimToken)
 	if !ok {
-		r.writeErrorResponse(c, constants.ErrorFailedToParseClaims, nil)
+		h.writeErrorResponse(c, constants.ErrorFailedToParseClaims, nil)
 		return
 	}
 
@@ -183,7 +183,7 @@ func (r *UserHandler) validateToken(c *gin.Context) {
 	helpers.SendResponseHTTP(c, http.StatusOK, constants.ValidToken, response)
 }
 
-func (r *UserHandler) writeErrorResponse(c *gin.Context, err error, data any) {
+func (h *UserHandler) writeErrorResponse(c *gin.Context, err error, data any) {
 	var appErr *constants.AppError
 	var valErrs validator.ValidationErrors
 
