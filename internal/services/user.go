@@ -2,12 +2,12 @@ package services
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/mhasnanr/ewallet-ums/constants"
 	"github.com/mhasnanr/ewallet-ums/helpers"
 	"github.com/mhasnanr/ewallet-ums/internal/models"
+	"github.com/mhasnanr/ewallet-ums/internal/models/dto"
 )
 
 type PasswordHasher interface {
@@ -23,7 +23,7 @@ type JWTManager interface {
 type UserRepository interface {
 	Register(context.Context, *models.User) (*models.User, error)
 	GetUserByEmail(context.Context, string) (models.User, error)
-	DeleteUser(context.Context, int) (error)
+	DeleteUser(context.Context, int) error
 }
 
 type WalletAPI interface {
@@ -71,17 +71,17 @@ func (s *UserService) Register(ctx context.Context, user *models.User) (*models.
 
 	if err := s.walletAPI.CreateWallet(user.ID); err != nil {
 		if err := s.userRepo.DeleteUser(ctx, user.ID); err != nil {
-			return  nil, err
-		}	
+			return nil, err
+		}
 		return nil, err
 	}
 
 	return user, nil
 }
 
-func (s *UserService) Login(ctx context.Context, req models.LoginRequest) (models.LoginResponse, error) {
+func (s *UserService) Login(ctx context.Context, req models.LoginRequest) (dto.LoginResponse, error) {
 	var (
-		response models.LoginResponse
+		response dto.LoginResponse
 		now      = time.Now()
 	)
 
@@ -101,12 +101,12 @@ func (s *UserService) Login(ctx context.Context, req models.LoginRequest) (model
 
 	token, err := s.jwtManager.GenerateToken(returnedUser, "token")
 	if err != nil {
-		return response, errors.New("failed to generate token")
+		return response, constants.ErrorFailedToGenerateToken
 	}
 
 	refreshToken, err := s.jwtManager.GenerateToken(returnedUser, "refreshToken")
 	if err != nil {
-		return response, errors.New("failed to generate token")
+		return response, constants.ErrorFailedToGenerateToken
 	}
 
 	response.Token = token
@@ -121,7 +121,7 @@ func (s *UserService) Login(ctx context.Context, req models.LoginRequest) (model
 
 	err = s.sessionRepo.CreateUserSession(ctx, userSession)
 	if err != nil {
-		return response, errors.New("failed to create user session")
+		return response, constants.ErrorFailedToCreateSession
 	}
 
 	response.Token = token
@@ -140,12 +140,12 @@ func (s *UserService) UpdateTokenByRefreshToken(ctx context.Context, refreshToke
 
 	newToken, err := s.jwtManager.GenerateToken(user, "token")
 	if err != nil {
-		return newToken, errors.New("failed to generate token")
+		return newToken, constants.ErrorFailedToGenerateToken
 	}
 
 	err = s.sessionRepo.UpdateTokenByRefreshToken(ctx, newToken, refreshToken)
 	if err != nil {
-		return newToken, errors.New("failed to update token")
+		return newToken, constants.ErrorFailedToUpdateToken
 	}
 
 	return newToken, nil
