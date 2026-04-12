@@ -1,9 +1,9 @@
 package constants
 
 var (
-	MsgUserCreated  = "user created successfully"
-	MsgLoginSucceed = "login succeed"
-	MsgLogoutSucceed = "logout succeed"
-
-	MsgNewToken     = "new token is generated"
+	UserCreated   = "user created successfully"
+	LoginSucceed  = "login succeed"
+	LogoutSucceed = "logout succeed"
+	NewToken      = "new token is generated"
+	ValidToken    = "token is valid"
 )
