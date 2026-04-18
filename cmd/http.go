@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -8,7 +9,7 @@ import (
 	"github.com/mhasnanr/ewallet-ums/bootstrap"
 	"github.com/mhasnanr/ewallet-ums/external"
 	"github.com/mhasnanr/ewallet-ums/helpers"
-	"github.com/mhasnanr/ewallet-ums/internal/handler"
+	handler "github.com/mhasnanr/ewallet-ums/internal/handler/http"
 	"github.com/mhasnanr/ewallet-ums/internal/middleware"
 	"github.com/mhasnanr/ewallet-ums/internal/repository"
 	"github.com/mhasnanr/ewallet-ums/internal/services"
@@ -35,8 +36,10 @@ func ServeHTTP(db *gorm.DB) {
 
 	userHandler.RegisterRoute(r)
 
-	server := &http.Server{Addr: ":" + bootstrap.GetEnv("HTTP_PORT", "8080"), Handler: r}
+	httpPort := bootstrap.GetEnv("HTTP_PORT", "8080")
+	server := &http.Server{Addr: ":" + httpPort, Handler: r}
 
+	fmt.Printf("http server is running on port %s", httpPort)
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal("server stopped")
 	}
