@@ -39,7 +39,7 @@ func ServeHTTP(db *gorm.DB) {
 	httpPort := bootstrap.GetEnv("HTTP_PORT", "8080")
 	server := &http.Server{Addr: ":" + httpPort, Handler: r}
 
-	fmt.Printf("http server is running on port %s", httpPort)
+	fmt.Printf("http server is running on port %s...\n", httpPort)
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal("server stopped")
 	}
