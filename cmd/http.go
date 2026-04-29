@@ -17,7 +17,9 @@ import (
 )
 
 func ServeHTTP(db *gorm.DB) {
-	r := gin.Default()
+	r := gin.New()
+
+	r.Use(middleware.LoggerMiddleware(bootstrap.Log))
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "server is healthy"})
